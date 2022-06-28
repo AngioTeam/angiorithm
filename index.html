@@ -1,0 +1,327 @@
+<html>
+    <head>
+        <title>Angioritm</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+        <script src="https://rawcdn.githack.com/mholt/PapaParse/07724570a111dc3439975a924dbc3ce6b3bd2235/papaparse.min.js" crossorigin="anonymous"></script>
+
+        <style>
+            body p {
+                text-align: left;
+            }
+
+            button {
+                width: 100%;
+                height: 38px;
+            }
+
+            th[scope=row] {
+                background-color: rgb(143, 107, 107);
+                color: white;
+                text-align: left;
+            }
+
+            #info-table tbody tr:first-child th, #info-table tbody tr:first-child td {
+                background-color: red;
+                color: white;
+            }
+
+            #results-table th:nth-child(2), #results-table td:nth-child(2) {
+                text-align: center;
+            }
+        </style>
+
+        <script>
+            $(window).on('load', function() {
+                var data;
+
+                $('a.dropdown-item').on('click', function () {
+                    this.parentElement.parentElement.parentElement.children[0].innerText = this.innerText;
+                });
+
+                Papa.parse('VCD-stats-newest (1).csv', {
+                    download: true,
+                    complete: function (results) {
+                       data = results.data;
+                       data.shift();
+                    }
+                });
+
+                $('.btn-success').on('click', function () {
+                    var inputs,
+                        names = [],
+                        matches = [],
+                        msg = ''
+                        $table = $('#results-table');
+
+                    if ($('.dropdown-toggle:empty').length > 0) {
+                        alert('Please fill in all fields!');
+                    }
+                    else {
+                        inputs = $('.dropdown-toggle').map(function () { return $(this).text(); }).get();
+
+                        $('#results-table').show();
+
+                        data.forEach(function (row, rownum) {
+                            row.forEach(function (col, colnum) {
+                                switch (colnum) {
+                                    case 0: // product name
+                                        matches[rownum] = matches[rownum] || 0; // init matches
+                                        names.push(col);
+                                        break;
+                                    case 2: // vessel size
+                                        var val = ['< 4 mm', '4 mm', '> 4 mm'].indexOf(inputs[colnum-1]) + 3;
+                                        if (val >= parseInt(col.substr(1).trim())) {
+                                            matches[rownum]++;
+                                        }
+                                        if (val === 3) {
+                                            $('#vessel-alert').show();
+                                            $('#results-table').hide();
+                                        }
+                                        break;
+                                    case 3: // puncture/sheath size
+                                        var val = parseInt(inputs[colnum-1]) || 9;
+                                        if (val >= parseInt(col.split('-')[0]) && val <= parseInt(col.split('-')[1])) {
+                                            matches[rownum]++;
+                                        }
+                                        break;
+                                    case 8: // activated clotting time
+                                        var val = ['≤ 300 seconds', '> 300 seconds'].indexOf(inputs[colnum-1]);
+                                        if (inputs[colnum-1] === col.trim()) {
+                                            matches[rownum]++;
+                                        }
+                                        if (val === 1) {
+                                            $('#act-alert').show();
+                                            $('#results-table').hide();
+                                        }
+                                        break;
+                                    case 9: // international normalised ratio
+                                        var val = ['≤ 1.5', '> 1.5'].indexOf(inputs[colnum-1]);
+                                        if (inputs[colnum-1] === col.trim()) {
+                                            matches[rownum]++;
+                                        }
+                                        if (val === 1) {
+                                            $('#inr-alert').show();
+                                            $('#results-table').hide();
+                                        }
+                                        break;
+                                    default:
+                                        if (col.split(', ').includes(inputs[colnum-1])) {
+                                            matches[rownum]++;
+                                        }
+                                }
+                            });
+                        });
+
+                        // names.forEach(function (item, i) {
+                        //     msg += item + ' - ' + matches[i] + ' matches, ' + (inputs.length - matches[i]) + ' difference\n';
+                        // });
+
+                        // alert(msg.trim());
+
+                        Object.keys(matches).sort(function (a, b) { return matches[b] - matches[a]; }).forEach(function (i, _, arr) {
+                            $table.append('<tr class="' + (matches[i] === matches[arr[0]] ? 'table-success' : '') + '"><td>' + names[i] + '</td><td>' + (matches[i]/inputs.length*100).toFixed(2) + '% (' + matches[i] + '/' + inputs.length + ' matching criterias)</td></tr>');
+                        });
+
+                        $('#page-form').fadeOut(250);
+                        setTimeout(function () { $('#page-results').fadeIn(250); }, 250);
+                    }
+                });
+
+                $('.btn-primary').on('click', function () {
+                    $('#page-results').fadeOut(250);
+                    setTimeout(function () {
+                        $('#page-form').fadeIn(250);
+                        $('.alert-danger').hide();
+                        $('#results-table tbody tr').remove();
+                    }, 250);
+                });
+            });
+        </script>
+    </head>
+    <body style="text-align: center; padding: 30px">
+        <img src="https://i.imgur.com/k6cSdax.png">
+        <br>
+        <label style="z-index: 1; color: rgb(75, 0, 130); font-family: &quot;comic sans ms&quot;, cursive; font-size: 2em; font-weight: bold; text-shadow: rgb(218, 112, 214) 0px 0px 9px; opacity: 0.8;">
+            <span style=";" font-size="1em">Angiorithm Prototype</span>
+        </label>
+
+        <div id="page-form">
+            <p>Type of Vessel</p>
+            <div class="input-group mb-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item">Common Femoral Artery</a></li>
+                    <li><a class="dropdown-item">Superficial Femoral Artery</a></li>
+                    <li><a class="dropdown-item">Deep Femoral Artery</a></li>
+                    <li><a class="dropdown-item">Brachial Artery</a></li>
+                    <li><a class="dropdown-item">Axillary Artery</a></li>
+                </ul>
+            </div>
+
+            <p>Vessel Size</p>
+            <div class="input-group mb-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item">&lt; 4 mm</a></li>
+                    <li><a class="dropdown-item">4 mm</a></li>
+                    <li><a class="dropdown-item">&gt; 4 mm</a></li>
+                </ul>
+            </div>
+
+            <p>Sheath Size</p>
+            <div class="input-group mb-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item">5 Fr</a></li>
+                    <li><a class="dropdown-item">6 Fr</a></li>
+                    <li><a class="dropdown-item">7 Fr</a></li>
+                    <li><a class="dropdown-item">8 Fr</a></li>
+                    <li><a class="dropdown-item">&gt; 8 Fr</a></li>
+                </ul>
+            </div>
+
+            <!-- <p>Arterial Bifurcation</p>
+            <div class="input-group mb-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item">Above</a></li>
+                    <li><a class="dropdown-item">Below</a></li>
+                </ul>
+            </div> -->
+            
+            <p>Puncture Site Relative to Inguinal Ligament Location</p>
+            <div class="input-group mb-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item">Above</a></li>
+                    <li><a class="dropdown-item">Below</a></li>
+                </ul>
+            </div>
+            
+            <p>Calcification of Vessel</p>
+            <div class="input-group mb-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item">Yes</a></li>
+                    <li><a class="dropdown-item">No</a></li>
+                </ul>
+            </div>
+
+            <p>Use of DOAC</p>
+            <div class="input-group mb-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item">Yes</a></li>
+                    <li><a class="dropdown-item">No</a></li>
+                </ul>
+            </div>
+            
+            <p>Use of Antiplatelets</p>
+            <div class="input-group mb-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item">Yes</a></li>
+                    <li><a class="dropdown-item">No</a></li>
+                </ul>
+            </div>
+            
+            <p>Activated Clotting Time (ACT)</p>
+            <div class="input-group mb-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item">&le; 300 seconds</a></li>
+                    <li><a class="dropdown-item">&gt; 300 seconds</a></li>
+                </ul>
+            </div>
+            
+            <p>International Normalised Ratio (INR)</p>
+            <div class="input-group mb-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item">&le; 1.5</a></li>
+                    <li><a class="dropdown-item">&gt; 1.5</a></li>
+                </ul>
+            </div>
+
+            <button type="button" class="btn btn-success" style="margin: 20px 30px; width:calc(100% - 60px); padding: 10px 0; height: auto">Submit</button>
+        </div>
+
+        <div id="page-results" style="padding:15px 0; display:none">
+            <div class="alert alert-danger text-right" id=vessel-alert role="alert" style="text-align: left; display: none">
+                Manual compression is advised since vessel size is < 4mm
+            </div>
+            <div class="alert alert-danger text-right" id=act-alert role="alert" style="text-align: left; display: none">
+                Manual compression is advised since ACT > 300s
+            </div>
+            <div class="alert alert-danger text-right" id=inr-alert role="alert" style="text-align: left; display: none">
+                Manual compression is advised since INR > 1.5
+            </div>
+            <table class="table table-bordered" id="results-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Product</th>
+                        <th scope="col">Suitability</th>
+                    </tr>
+                </thead>
+                <tbody class="table-group-divider"></tbody>
+            </table>
+            <hr>
+            <table class="table text-center align-middle" id="info-table">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col" class="table-light"></th>
+                        <th scope="col">Time-to-Haemostasis (TTH)</th>
+                        <th scope="col">Time-to-Ambulation (TTA)</th>
+                        <th scope="col">Warnings</th>
+                    </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                    <tr>
+                        <th scope="row">Manual Compression</th>
+                        <td>20 - 30 minutes</td>
+                        <td>6 hours</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">AngioSeal</th>
+                        <td>Immediate</td>
+                        <td>20 - 60 minutes</td>
+                        <td><a target="_blank" href="https://www.terumois.com/content/dam/terumo-www/global-shared/terumo-tis/en-us/product-assets/angio-seal-family/angio-seal-vip-ifu.pdf#page=2">Warnings</a></td>
+                    </tr>
+                    <tr>
+                        <th scope="row">StarClose</th>
+                        <td>Immediate</td>
+                        <td>20 - 120 minutes</td>
+                        <td><a target="_blank" href="https://www.cardiovascular.abbott/us/en/hcp/products/peripheral-intervention/starclose-se-vascular-closure-system.html#:~:text=to%20nickel%2Dtitanium.-,WARNINGS,-Do%20not%20use">Warnings</a></td>
+                    </tr>
+                    <tr>
+                        <th scope="row">CELT</th>
+                        <td>Immediate</td>
+                        <td>13 - 30 minutes</td>
+                        <td><a target="_blank" href="https://www.vasorum.ie/wp-content/themes/vasorum/assets/pdf/ifu-pdf-us.pdf#page=3">Warnings</a></td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Mynx Control</th>
+                        <td>&ge; 25 minutes</td>
+                        <td>&ge; 20 minutes</td>
+                        <td><a target="_blank" href="https://www.cordisjapan.jp/content/dam/cordis/web/documents/brochure/Cordis-MynxAceVascularClosureDeviceInstructionsForUse.pdf#page=2">Warnings</a></td>
+                    </tr>
+                    <tr>
+                        <th scope="row">ProGlide</th>
+                        <td>1.5 minutes</td>
+                        <td>27.1 minutes</td>
+                        <td><a target="_blank" href="https://www.cardiovascular.abbott/us/en/hcp/products/peripheral-intervention/vessel-closure/perclose-proglide-suture-mediated-closure-system/important-safety-information.html#:~:text=and%20PRECAUTIONS%20sections.-,Warnings,-%3A%20Do%20not">Warnings</a></td>
+                    </tr>
+                </tbody>
+                <tfoot class="table-group-divider"><tr></tr></tfoot>
+            </table>
+
+            <button type="button" class="btn btn-primary" style="margin: 20px 30px; width:calc(100% - 60px); padding: 10px 0; height: auto">Done</button>
+        </div>
+    </body>
+</html>

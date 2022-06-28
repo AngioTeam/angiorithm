@@ -1,0 +1,6 @@
+﻿Product,Vessel,Vessel Size,Sheath Size,Puncture Site Relative to Inguinal Ligament Location,Calcified Vessels,Use of DOAC,Use of Antiplatelets,Activated Clotting Time (ACT),International Normalised Ratio (INR)
+AngioSeal,"Common Femoral Artery, Brachial Artery, Axillary Artery",≥ 4mm,6-8 Fr,Below,No,Yes,Yes,≤ 300 seconds,≤ 1.5
+StarClose,"Common Femoral Artery, Brachial Artery, Axillary Artery",≥ 5mm,5-6 Fr,Below,No,Yes,Yes,≤ 300 seconds,≤ 1.5
+CELT,Common Femoral Artery,≥ 5mm,5-7 Fr,Below,Yes,Yes,Yes,≤ 300 seconds,≤ 1.5
+Mynx Control,"Common Femoral Artery, Superficial Femoral Artery, Deep Femoral Artery",≥ 5mm,5-7 Fr,Below,No,Yes,Yes,≤ 300 seconds,≤ 1.5
+ProGlide,"Common Femoral Artery, Axillary Artery",≥ 5mm,5-21 Fr,Below,No,Yes,Yes,≤ 300 seconds,≤ 1.5
