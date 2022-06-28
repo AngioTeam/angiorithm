@@ -43,7 +43,7 @@
                     this.parentElement.parentElement.parentElement.children[0].innerText = this.innerText;
                 });
 
-                Papa.parse('VCD-stats-newest.csv', {
+                Papa.parse('VCD stats newest.csv', {
                     download: true,
                     complete: function (results) {
                        data = results.data;
